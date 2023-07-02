@@ -1,91 +1,80 @@
-from typing import Final
+# import telebot
+# # from telebot import types
+# from transformers import ViTImageProcessor, AutoTokenizer
+# from transformers import VisionEncoderDecoderModel
+# import torch
+# from PIL import Image
+# import requests
+# from io import BytesIO
 
-# pip install python-telegram-bot
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+# # Initialize the Telegram bot
+# bot_token = "6263151783:AAEQM3avoTLWQdqUMenhEsFFHUgggOCnSbg"
+# bot = telebot.TeleBot(bot_token)
 
-print('Starting up bot...')
+# # Load the image-to-text model and components
+# model = VisionEncoderDecoderModel.from_pretrained(
+#     "nlpconnect/vit-gpt2-image-captioning"
+# )
+# feature_extractor = ViTImageProcessor.from_pretrained(
+#     "nlpconnect/vit-gpt2-image-captioning"
+# )
+# tokenizer = AutoTokenizer.from_pretrained('nlpconnect/vit-gpt2-image-captioning')
 
-TOKEN: Final = 'YOUR TOKEN'
-BOT_USERNAME: Final = '@your_bot_user'
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model.to(device)
 
-
-# Lets us use the /start command
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello there! I\'m a bot. What\'s up?')
-
-
-# Lets us use the /help command
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Try typing anything and I will do my best to respond!')
-
-
-# Lets us use the /custom command
-async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('This is a custom command, you can add whatever text you want here.')
-
-
-def handle_response(text: str) -> str:
-    # Create your own response logic
-    processed: str = text.lower()
-
-    if 'hello' in processed:
-        return 'Hey there!'
-
-    if 'how are you' in processed:
-        return 'I\'m good!'
-
-    if 'i love python' in processed:
-        return 'Remember to subscribe!'
-
-    return 'I don\'t understand'
+# # Set the maximum length and number of beams for caption generation
+# max_length = 16
+# num_beams = 4
+# gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
 
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Get basic info of the incoming message
-    message_type: str = update.message.chat.type
-    text: str = update.message.text
-
-    # Print a log for debugging
-    print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
-
-    # React to group messages only if users mention the bot directly
-    if message_type == 'group':
-        # Replace with your bot username
-        if BOT_USERNAME in text:
-            new_text: str = text.replace(BOT_USERNAME, '').strip()
-            response: str = handle_response(new_text)
-        else:
-            return  # We don't want the bot respond if it's not mentioned in the group
-    else:
-        response: str = handle_response(text)
-
-    # Reply normal if the message is in private
-    print('Bot:', response)
-    await update.message.reply_text(response)
+# @bot.message_handler(commands=["start"])
+# def start(message):
+#     bot.reply_to(
+#         message,
+#         "Welcome to the Image Captioning Bot! Send me an ima"
+#         + "ge and I'll generate a caption for it.",
+#     )
 
 
-# Log errors
-async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f'Update {update} caused error {context.error}')
+# @bot.message_handler(content_types=["photo"])
+# def handle_image(message):
+#     try:
+#         # Get the image file ID
+#         file_id = message.photo[-1].file_id
+#         # Get the file path
+#         file_path = bot.get_file(file_id).file_path
+#         # Download the image
+#         image_url = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
+#         response = requests.get(image_url)
+#         image = Image.open(BytesIO(response.content))
+
+#         # Convert image to RGB if needed
+#         if image.mode != "RGB":
+#             image = image.convert("RGB")
+
+#         # Perform image captioning
+#         captions = predict_step([image])
+#         caption_text = " ".join(captions)
+
+#         # Send the caption as a message
+#         bot.reply_to(message, caption_text)
+#     except Exception as e:
+#         print(e)
+#         bot.reply_to(message, "Oops! Something went wrong. Please try again.")
 
 
-# Run the program
-if __name__ == '__main__':
-    app = Application.builder().token(TOKEN).build()
+# def predict_step(images):
+#     pixel_values = feature_extractor(images=images, return_tensors="pt").pixel_values
+#     pixel_values = pixel_values.to(device)
 
-    # Commands
-    app.add_handler(CommandHandler('start', start_command))
-    app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('custom', custom_command))
+#     output_ids = model.generate(pixel_values, **gen_kwargs)
 
-    # Messages
-    app.add_handler(MessageHandler(filters.TEXT, handle_message))
+#     preds = tokenizer.batch_decode(output_ids[0], skip_special_tokens=True)
+#     preds = [pred.strip() for pred in preds]
+#     return preds
 
-    # Log all errors
-    app.add_error_handler(error)
 
-    print('Polling...')
-    # Run the bot
-    app.run_polling(poll_interval=5)
-
+# # Start the bot
+# bot.polling()
